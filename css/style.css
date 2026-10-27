@@ -204,3 +204,16 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .task.done .task-text { color: var(--muted); text-decoration: line-through; }
 .task-ico { font-size: 20px; }
 .all-done { color: var(--mint) !important; font-weight: 700; text-align: center; margin-top: 12px !important; }
+
+/* Цветок */
+.flower { display: flex; align-items: center; gap: 12px; background: linear-gradient(160deg, var(--mint-soft), var(--pink-soft)); }
+.flower-pic { flex: 0 0 132px; }
+.flower-svg { width: 132px; height: 132px; display: block; }
+.flower-svg.sway .plant { transform-origin: 100px 160px; animation: sway 4s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+.flower-info h2 { font-size: 19px; }
+.flower-info p { font-size: 14px; }
+.flower-dry { margin-bottom: 6px !important; }
+.flower-next { color: var(--text) !important; font-weight: 600; }
+.flower.dry-2, .flower.dry-3 { background: linear-gradient(160deg, #f5efe6, #f8ece6); }
+@media (prefers-reduced-motion: reduce) { .flower-svg.sway .plant { animation: none; } }

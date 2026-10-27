@@ -1,5 +1,6 @@
 import { getDay, updateDay } from './storage.js';
 import { DAILY_TASKS } from './tasks.js';
+import { renderFlowerCard } from './flower.js';
 
 const LEVELS = [
   [20, 'Совсем без сил — сегодня бережём себя'],
@@ -18,6 +19,8 @@ export function renderToday(root) {
   const count = DAILY_TASKS.filter((t) => done.has(t.id)).length;
 
   root.innerHTML = `
+    ${renderFlowerCard()}
+
     <section class="card energy">
       <h2>Как у тебя с энергией?</h2>
       <p>Проведи по батарейке, чтобы налить свой уровень</p>

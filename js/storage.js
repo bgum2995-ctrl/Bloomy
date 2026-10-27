@@ -53,3 +53,7 @@ export function updateDay(patch, key = todayKey()) {
   state.days[key] = { ...getDay(key), ...patch };
   save();
 }
+
+export function getAllDays() {
+  return state.days;
+}
