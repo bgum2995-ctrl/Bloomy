@@ -1,0 +1,10 @@
+{
+  "name": "Bloomy",
+  "short_name": "Bloomy",
+  "lang": "ru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8f5",
+  "theme_color": "#f4a6bd",
+  "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
