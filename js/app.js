@@ -1,4 +1,5 @@
 import { renderWater } from './water.js';
+import { renderToday } from './today.js';
 
 const view = document.getElementById('view');
 
@@ -12,7 +13,7 @@ const soon = (icon, title, text) => (root) => {
 };
 
 const routes = {
-  today: soon('🌱', 'Сегодня', 'Здесь появятся батарейка энергии, чек-лист и цветок.'),
+  today: renderToday,
   water: renderWater,
   shelf: soon('🪴', 'Полка цветов', 'Здесь будут стоять цветы за прошлые месяцы.'),
   more: soon('✨', 'Ещё', 'Отдых, цикл, замеры и анализы — скоро.')

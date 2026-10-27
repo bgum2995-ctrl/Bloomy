@@ -4,7 +4,7 @@ const KEY = 'bloomy:v1';
 const defaults = () => ({
   version: 1,
   settings: { waterGoal: 2000, glassSize: 250 },
-  days: {} // 'YYYY-MM-DD' -> { water: number }
+  days: {} // 'YYYY-MM-DD' -> { water, energy, done }
 });
 
 let state = load();
@@ -46,7 +46,7 @@ export function updateSettings(patch) {
 }
 
 export function getDay(key = todayKey()) {
-  return { water: 0, ...state.days[key] };
+  return { water: 0, energy: null, done: [], ...state.days[key] };
 }
 
 export function updateDay(patch, key = todayKey()) {
