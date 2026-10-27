@@ -1,7 +1,10 @@
 import { getDay, updateDay } from './storage.js';
-import { DAILY_TASKS } from './tasks.js';
+import { taskById, dealCards, swapCard } from './tasks.js';
 import { renderFlowerCard } from './flower.js';
-
+import { renderCycleHint } from './cycle.js';
+import { renderPlan, planLevel } from './plan.js';
+import { renderSupport } from './support.js';
+import { renderReminders, bindReminders } from './reminders.js';
 const LEVELS = [
   [20, 'Совсем без сил — сегодня бережём себя'],
   [45, 'Сил немного — двигаемся мягко'],
@@ -13,12 +16,21 @@ const LEVELS = [
 const energyText = (v) => LEVELS.find(([max]) => v < max)[1];
 
 export function renderToday(root) {
-  const day = getDay();
+  let day = getDay();
+  // дни из первой версии: задания уже отмечены, а карточек ещё не было
+  if (!day.cards && day.done.length) {
+    const cards = dealCards(planLevel(day.energy) ?? 2);
+    updateDay({ cards: [...new Set([...day.done, ...cards])].filter(taskById) });
+    day = getDay();
+  }
   const energy = day.energy ?? 0;
   const done = new Set(day.done);
-  const count = DAILY_TASKS.filter((t) => done.has(t.id)).length;
+  const cards = (day.cards || []).map(taskById).filter(Boolean);
+  const count = cards.filter((t) => done.has(t.id)).length;
+  const allDone = cards.length > 0 && count === cards.length;
 
   root.innerHTML = `
+    ${renderReminders()}
     ${renderFlowerCard()}
 
     <section class="card energy">
@@ -35,39 +47,68 @@ export function renderToday(root) {
       <p class="energy-text"></p>
     </section>
 
+    ${renderCycleHint()}
+    ${renderPlan(day.energy)}
+
     <section class="card checklist">
-      <div class="checklist-head">
-        <h2>Задания на сегодня</h2>
-        <span class="counter">${count} / ${DAILY_TASKS.length}</span>
-      </div>
-      <div class="progress"><span style="width:${Math.round((count / DAILY_TASKS.length) * 100)}%"></span></div>
-      <ul class="tasks">
-        ${DAILY_TASKS.map((t) => `
-          <li>
-            <button class="task ${done.has(t.id) ? 'done' : ''}" data-id="${t.id}" aria-pressed="${done.has(t.id)}">
-              <span class="check"></span>
-              <span class="task-ico">${t.icon}</span>
-              <span class="task-text">${t.text}</span>
-            </button>
-          </li>`).join('')}
-      </ul>
-      ${count === DAILY_TASKS.length ? '<p class="all-done">Все задания выполнены — цветок счастлив 🌸</p>' : ''}
+      ${cards.length ? `
+        <div class="checklist-head">
+          <h2>Карточки на сегодня</h2>
+          <span class="counter">${count} / ${cards.length}</span>
+        </div>
+        <div class="progress"><span style="width:${Math.round((count / cards.length) * 100)}%"></span></div>
+        <ul class="tasks">
+          ${cards.map((t) => `
+            <li class="task-card">
+              <button class="task ${done.has(t.id) ? 'done' : ''}" data-id="${t.id}" aria-pressed="${done.has(t.id)}">
+                <span class="check"></span>
+                <span class="task-ico">${t.icon}</span>
+                <span class="task-text">${t.text}</span>
+              </button>
+              ${!day.swapped && !done.has(t.id) ? `<button class="swap" data-swap="${t.id}" aria-label="Заменить карточку" title="Заменить карточку">↻</button>` : ''}
+            </li>`).join('')}
+        </ul>
+        <p class="swap-note">${day.swapped ? 'Замена на сегодня использована' : '↻ — одну карточку в день можно заменить'}</p>
+        ${allDone ? '<p class="all-done">Все задания выполнены — цветок счастлив 🌸</p>' : ''}
+      ` : `
+        <h2>Карточки на сегодня</h2>
+        <p>Наполни батарейку — и я соберу задания под твоё состояние.</p>
+        <div class="row"><button class="btn" data-act="deal">Собрать без оценки</button></div>
+      `}
     </section>
+
+    ${renderSupport(allDone)}
   `;
 
-  setupBattery(root, day.energy);
+  const rerender = () => renderToday(root);
+  bindReminders(root, rerender);
+  setupBattery(root, day.energy, (value) => {
+    if (!getDay().cards) dealCards(planLevel(value));
+    rerender();
+  });
+
+  root.querySelector('[data-act="deal"]')?.addEventListener('click', () => {
+    dealCards(2);
+    rerender();
+  });
 
   root.querySelectorAll('.task').forEach((btn) => {
     btn.onclick = () => {
       const id = btn.dataset.id;
       if (done.has(id)) done.delete(id); else done.add(id);
       updateDay({ done: [...done] });
-      renderToday(root);
+      rerender();
+    };
+  });
+
+  root.querySelectorAll('[data-swap]').forEach((btn) => {
+    btn.onclick = () => {
+      if (swapCard(btn.dataset.swap)) rerender();
     };
   });
 }
 
-function setupBattery(root, saved) {
+function setupBattery(root, saved, onCommit) {
   const battery = root.querySelector('.battery');
   const fill = root.querySelector('.battery-fill');
   const label = root.querySelector('.battery-label');
@@ -89,7 +130,10 @@ function setupBattery(root, saved) {
     paint();
   };
 
-  const commit = () => updateDay({ energy: value });
+  const commit = () => {
+    updateDay({ energy: value });
+    onCommit(value);
+  };
 
   battery.addEventListener('pointerdown', (e) => {
     battery.setPointerCapture(e.pointerId);
@@ -107,6 +151,7 @@ function setupBattery(root, saved) {
     saved = value;
     paint();
     commit();
+    root.querySelector('.battery')?.focus();
   });
 
   paint();

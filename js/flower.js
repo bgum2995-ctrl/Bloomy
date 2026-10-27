@@ -1,4 +1,5 @@
 import { getAllDays, todayKey } from './storage.js';
+import { plural } from './util.js';
 
 // Цветок месяца: растёт от выполненных заданий за месяц, подсыхает от пропущенных дней.
 // Всё считается из сохранённых дней, поэтому отдельного состояния не нужно.
@@ -30,15 +31,34 @@ const shiftKey = (key, days) => {
   return todayKey(new Date(y, m - 1, d + days));
 };
 
+export function monthPoints(month) {
+  const days = getAllDays();
+  return Object.keys(days)
+    .filter((k) => k.startsWith(month))
+    .reduce((sum, k) => sum + (days[k].done?.length ?? 0), 0);
+}
+
+export function stageFor(points) {
+  let stage = 0;
+  STAGES.forEach((s, i) => { if (points >= s.min) stage = i; });
+  return stage;
+}
+
+// Цветок прошлого месяца для полки — без засыхания, каким он вырос.
+export function monthFlower(month) {
+  const points = monthPoints(month);
+  const stage = stageFor(points);
+  const m = Number(month.slice(5, 7)) - 1;
+  return { stage, stageName: STAGES[stage].name, points, dry: 0, palette: PALETTES[m % PALETTES.length] };
+}
+
 export function getFlower(date = new Date()) {
   const days = getAllDays();
   const today = todayKey(date);
   const month = today.slice(0, 7);
   const doneOn = (k) => (days[k]?.done?.length ?? 0);
 
-  const points = Object.keys(days)
-    .filter((k) => k.startsWith(month))
-    .reduce((sum, k) => sum + doneOn(k), 0);
+  const points = monthPoints(month);
 
   // Пропуски считаем подряд со вчерашнего дня, но не раньше первого дня в приложении
   // и не раньше начала месяца (новый цветок начинает с чистого листа).
@@ -51,8 +71,7 @@ export function getFlower(date = new Date()) {
   }
   const dry = Math.min(3, missed);
 
-  let stage = 0;
-  STAGES.forEach((s, i) => { if (points >= s.min) stage = i; });
+  const stage = stageFor(points);
   const next = STAGES[stage + 1];
 
   return {
@@ -130,7 +149,7 @@ export function flowerSVG({ stage, dry, palette }) {
 
 export function renderFlowerCard() {
   const f = getFlower();
-  const hint = f.toNext ? `До следующей стадии: ${f.toNext} ${plural(f.toNext)}` : 'Цветок вырос полностью 🌸';
+  const hint = f.toNext ? `До следующей стадии: ${f.toNext} ${plural(f.toNext, ['задание', 'задания', 'заданий'])}` : 'Цветок вырос полностью 🌸';
   return `
     <section class="card flower dry-${f.dry}">
       <div class="flower-pic">${flowerSVG(f)}</div>
@@ -140,11 +159,4 @@ export function renderFlowerCard() {
         <p class="flower-next">${hint}</p>
       </div>
     </section>`;
-}
-
-function plural(n) {
-  const a = n % 10, b = n % 100;
-  if (a === 1 && b !== 11) return 'задание';
-  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return 'задания';
-  return 'заданий';
 }
