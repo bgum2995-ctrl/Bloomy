@@ -1,6 +1,27 @@
 import { cycleInfo } from './cycle.js';
 import { pickBy } from './util.js';
-import { todayKey } from './storage.js';
+import { todayKey, getDay } from './storage.js';
+import { getProfile, hasProfile, myActivities, isPregnant } from './profile.js';
+import { minutesFor, taskById } from './tasks.js';
+
+const GOAL_TIPS = {
+  weight: ['🎯', 'Цель: вес', 'Небольшой дефицит без голода: овощи, белок, меньше сладких напитков'],
+  volume: ['🎯', 'Цель: объёмы', 'Силовые и тонус: резинки, пилатес, приседания — плюс белок в каждый приём пищи'],
+  wellbeing: ['🎯', 'Цель: самочувствие', 'Сон, вода и движение в удовольствие — без подсчётов']
+};
+
+// Движение из анкеты: любимая активность под уровень дня и выбранное время.
+function personalMove(level) {
+  const card = (getDay().cards || []).find((c) => c.startsWith('act:'));
+  if (card && taskById(card)) {
+    const t = taskById(card);
+    return [t.icon, 'Движение', `${t.text}${level === 1 ? ', в мягком темпе' : ''}`];
+  }
+  const list = myActivities().filter((a) => (a.level || 1) <= level);
+  if (!list.length) return null;
+  const a = pickBy(todayKey() + 'move', list);
+  return [a.icon, 'Движение', `${a.name} — ${minutesFor(level)} мин${level === 1 ? ', в мягком темпе' : ''}`];
+}
 
 // План дня собирается из шаблонов: уровень по энергии, поправка на фазу цикла.
 export function planLevel(energy) {
@@ -56,6 +77,16 @@ const PLANS = {
   }
 };
 
+function items(plan, level) {
+  if (!hasProfile()) return plan.items;
+  const move = personalMove(level);
+  const list = plan.items.map((it) => (it[1] === 'Движение' && move ? move : it));
+  const goal = GOAL_TIPS[getProfile().goal];
+  if (goal) list.unshift(goal);
+  if (isPregnant()) list.push(['🤰', 'Бережно', 'Любую нагрузку согласуй с врачом, слушай тело']);
+  return list;
+}
+
 export function renderPlan(energy) {
   const level = planLevel(energy);
   if (!level) return '';
@@ -69,7 +100,7 @@ export function renderPlan(energy) {
       </div>
       <p>${pickBy(todayKey() + 'plan', plan.intro)}</p>
       <ul class="plan-list">
-        ${plan.items.map(([icon, name, text]) => `<li><span>${icon}</span><div><b>${name}</b><br>${text}</div></li>`).join('')}
+        ${items(plan, level).map(([icon, name, text]) => `<li><span>${icon}</span><div><b>${name}</b><br>${text}</div></li>`).join('')}
         ${c ? `<li><span>🌙</span><div><b>Цикл</b><br>${c.tip}</div></li>` : ''}
       </ul>
     </section>`;

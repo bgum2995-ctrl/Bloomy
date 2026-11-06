@@ -1,6 +1,7 @@
 import { getDay, todayKey } from './storage.js';
-import { pickBy } from './util.js';
+import { pickBy, esc } from './util.js';
 import { cycleInfo } from './cycle.js';
+import { userName } from './profile.js';
 
 // Слова поддержки в конце дня — шаблонные, подбираются по тому, как прошёл день.
 const TEXTS = {
@@ -48,7 +49,7 @@ export function renderSupport(force = false) {
   if (!force && new Date().getHours() < 18) return '';
   return `
     <section class="card support">
-      <h2>🌙 Итог дня</h2>
+      <h2>🌙 Итог дня${userName() ? `, ${esc(userName())}` : ''}</h2>
       ${supportText().map((t) => `<p>${t}</p>`).join('')}
     </section>`;
 }

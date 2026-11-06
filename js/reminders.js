@@ -3,17 +3,41 @@ import { measureDue } from './measure.js';
 import { doctorsDue } from './health.js';
 import { cycleInfo } from './cycle.js';
 import { esc } from './util.js';
+import { getProfile } from './profile.js';
+import { streakInfo, isSoftDay, MIN_MINUTES } from './activity.js';
+
+const minutesOf = (hhmm, fallback) => {
+  const [h, m] = String(hhmm || fallback).split(':').map(Number);
+  return h * 60 + (m || 0);
+};
 
 // Веб-приложение не может само прислать уведомление, поэтому напоминания
 // показываются при открытии. Скрытое напоминание не возвращается до завтра.
 export function getReminders() {
   const list = [];
-  const hour = new Date().getHours();
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const p = getProfile();
+  const isEvening = nowMin >= minutesOf(p?.evening, '20:00');
+  const isMorning = nowMin >= minutesOf(p?.morning, '08:00');
+
+  if (p?.done && isMorning && !isEvening && getDay().energy == null) {
+    list.push({ id: 'energy', icon: '🔋', route: 'today', text: 'Доброе утро! Наполни батарейку — соберу план на день' });
+  }
+  const s = streakInfo();
+  if (p?.done && isEvening && !s.todayDone) {
+    list.push({
+      id: 'streak', icon: '🔥', route: 'activity',
+      text: s.count
+        ? `Запиши активность, чтобы не потерять серию (${s.count} дн.)${isSoftDay() ? ' — сегодня хватит любой' : ` — нужно ${MIN_MINUTES} мин`}`
+        : 'Запиши сегодняшнюю активность и начни серию'
+    });
+  }
 
   if (measureDue()) {
     list.push({
       id: 'measure', icon: '📏', route: 'measure',
-      text: hour >= 18 ? 'Вечер — хорошее время записать замеры за этот месяц' : 'В этом месяце замеров ещё нет'
+      text: isEvening ? 'Вечер — хорошее время записать замеры за этот месяц' : 'В этом месяце замеров ещё нет'
     });
   }
   doctorsDue().forEach((d) => list.push({
