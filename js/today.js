@@ -5,6 +5,7 @@ import { renderCycleHint } from './cycle.js';
 import { renderPlan, planLevel } from './plan.js';
 import { renderSupport } from './support.js';
 import { renderReminders, bindReminders } from './reminders.js';
+import { renderStreakCard, addActivity, removeActivity, checkMilestones } from './activity.js';
 const LEVELS = [
   [20, 'Совсем без сил — сегодня бережём себя'],
   [45, 'Сил немного — двигаемся мягко'],
@@ -31,6 +32,7 @@ export function renderToday(root) {
 
   root.innerHTML = `
     ${renderReminders()}
+    ${renderStreakCard()}
     ${renderFlowerCard()}
 
     <section class="card energy">
@@ -84,6 +86,7 @@ export function renderToday(root) {
   bindReminders(root, rerender);
   setupBattery(root, day.energy, (value) => {
     if (!getDay().cards) dealCards(planLevel(value));
+    checkMilestones();
     rerender();
   });
 
@@ -95,7 +98,15 @@ export function renderToday(root) {
   root.querySelectorAll('.task').forEach((btn) => {
     btn.onclick = () => {
       const id = btn.dataset.id;
-      if (done.has(id)) done.delete(id); else done.add(id);
+      const task = taskById(id);
+      if (done.has(id)) {
+        done.delete(id);
+        if (task?.act) removeActivity(`card:${id}`);
+      } else {
+        done.add(id);
+        // карточка активности сама записывается в серию и календарь
+        if (task?.act) addActivity(task.act, task.min, undefined, `card:${id}`);
+      }
       updateDay({ done: [...done] });
       rerender();
     };

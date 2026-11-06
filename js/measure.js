@@ -1,4 +1,5 @@
-import { get, set, todayKey } from './storage.js';
+import { get, set, todayKey, updateSettings } from './storage.js';
+import { getProfile, isPregnant, waterByWeight } from './profile.js';
 import { backLink, shortDate, longDate } from './util.js';
 
 export const FIELDS = [
@@ -118,6 +119,8 @@ export function renderMeasure(root) {
     // один замер на дату: новые значения дополняют старые
     const prev = get('measurements').find((m) => m.date === row.date) || {};
     set('measurements', [...get('measurements').filter((m) => m.date !== row.date), { ...prev, ...row }]);
+    // норма воды «по весу» обновляется вместе с новым весом
+    if (row.weight && getProfile()?.waterAuto) updateSettings({ waterGoal: waterByWeight(row.weight, isPregnant()) });
     renderMeasure(root);
   };
 

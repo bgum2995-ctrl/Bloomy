@@ -1,7 +1,9 @@
 import { getAllDays, todayKey } from './storage.js';
 import { monthFlower, flowerSVG, renderFlowerCard } from './flower.js';
 import { monthBadges, badgeHTML } from './rewards.js';
-import { monthTitle } from './util.js';
+import { monthTitle, longDate } from './util.js';
+import { MILESTONES } from './activity.js';
+import { get } from './storage.js';
 
 export function renderShelf(root) {
   const current = todayKey().slice(0, 7);
@@ -18,6 +20,15 @@ export function renderShelf(root) {
     </section>
 
     ${renderFlowerCard()}
+
+    <section class="card">
+      <h2>Вехи серии</h2>
+      <p>Награды за дни активности подряд — остаются навсегда.</p>
+      <div class="badges">${MILESTONES.map((m) => {
+        const got = get('milestones').find((h) => h.n === m.n);
+        return `<div class="badge ${got ? 'earned' : ''}"><span class="badge-ico">${m.icon}</span><b>${m.name}</b><small>${got ? longDate(got.date) : `${m.n} дней подряд`}</small></div>`;
+      }).join('')}</div>
+    </section>
 
     <section class="card">
       <h2>Полка цветов</h2>

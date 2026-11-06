@@ -5,11 +5,14 @@ const KEY = 'bloomy:v1';
 const defaults = () => ({
   version: 1,
   settings: { waterGoal: 2000, glassSize: 250 },
-  days: {}, // 'YYYY-MM-DD' -> { water, energy, done, cards, swapped, rest }
+  days: {}, // 'YYYY-MM-DD' -> { water, energy, done, cards, swapped, rest, acts: [{ a, min }] }
   cycle: { starts: [], length: 28, period: 5 },
   measurements: [], // { date, weight, arms, chest, waist, glutes, thigh }
   doctors: [], // { id, name, every, last }
-  seenRewards: [] // месяцы 'YYYY-MM', итоги которых уже показаны
+  seenRewards: [], // месяцы 'YYYY-MM', итоги которых уже показаны
+  profile: null, // ответы анкеты; { skipped: true } — анкету пропустили
+  custom: [], // свои активности { id, name }
+  milestones: [] // вехи серии { n, date }
 });
 
 let state = load();
@@ -59,7 +62,7 @@ export function updateSettings(patch) {
 }
 
 export function getDay(key = todayKey()) {
-  return { water: 0, energy: null, done: [], cards: null, swapped: false, rest: 0, ...state.days[key] };
+  return { water: 0, energy: null, done: [], cards: null, swapped: false, rest: 0, acts: [], ...state.days[key] };
 }
 
 export function updateDay(patch, key = todayKey()) {
@@ -71,7 +74,7 @@ export function getAllDays() {
   return state.days;
 }
 
-// Разделы целиком: cycle, measurements, doctors, seenRewards.
+// Разделы целиком: cycle, measurements, doctors, seenRewards, profile, custom, milestones.
 export const get = (part) => state[part];
 
 export function set(part, value) {
