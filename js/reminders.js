@@ -37,7 +37,7 @@ export function getReminders() {
   if (measureDue()) {
     list.push({
       id: 'measure', icon: '📏', route: 'measure',
-      text: isEvening ? 'Вечер — хорошее время записать замеры за этот месяц' : 'В этом месяце замеров ещё нет'
+      text: isEvening ? 'Вечер — хорошее время записать замеры за эту неделю' : 'На этой неделе замеров ещё нет'
     });
   }
   doctorsDue().forEach((d) => list.push({
