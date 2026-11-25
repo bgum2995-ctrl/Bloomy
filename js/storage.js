@@ -7,7 +7,7 @@ const defaults = () => ({
   settings: { waterGoal: 2000, glassSize: 250 },
   days: {}, // 'YYYY-MM-DD' -> { water, energy, done, cards, swapped, rest, acts: [{ a, min }] }
   cycle: { starts: [], length: 28, period: 5 },
-  measurements: [], // { date, weight, arms, chest, waist, glutes, thigh }
+  measurements: [], // { date, weight, arms, belly, waist, glutes, thigh }
   doctors: [], // { id, name, every, last }
   seenRewards: [], // месяцы 'YYYY-MM', итоги которых уже показаны
   profile: null, // ответы анкеты; { skipped: true } — анкету пропустили
